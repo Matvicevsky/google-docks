@@ -1,5 +1,7 @@
 'use client'
 
+import { useLiveblocksExtension } from '@liveblocks/react-tiptap'
+import { useStorage } from '@liveblocks/react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import { Color } from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
@@ -23,8 +25,22 @@ import { FontSizeExtension } from '@/extensions/font-size'
 import { LineHeightExtension } from '@/extensions/line-height'
 
 import { Ruler } from './ruler'
+import { Threads } from './threads'
 
-export const Editor = () => {
+import { LEFT_MARGIN_DEFAULT, RIGHT_MARGIN_DEFAULT } from '@/constants/margins'
+
+interface EditorProps {
+	initialContent?: string
+}
+
+export const Editor = ({ initialContent }: EditorProps) => {
+	const leftMargin = useStorage((root) => root.leftMargin)
+	const rightMargin = useStorage((root) => root.rightMargin)
+
+	const liveblocks = useLiveblocksExtension({
+		initialContent,
+		offlineSupport_experimental: true,
+	})
 	const { setEditor } = useEditorStore()
 
 	const editor = useEditor({
@@ -55,13 +71,16 @@ export const Editor = () => {
 		},
 		editorProps: {
 			attributes: {
-				style: 'padding-left: 56px; padding-right: 56px',
+				style: `padding-left: ${leftMargin ?? LEFT_MARGIN_DEFAULT}px; padding-right: ${rightMargin ?? RIGHT_MARGIN_DEFAULT}px`,
 				class:
 					'focus:outline-none print:border-0 bg-white border border-[#c7c7c7] flex flex-col min-h-[1054px] w-[816px] pt-10 pr-14 pb-10 cursor-text',
 			},
 		},
 		extensions: [
-			StarterKit,
+			liveblocks,
+			StarterKit.configure({
+				history: false,
+			}),
 			Color,
 			Image,
 			ImageResize,
@@ -107,6 +126,7 @@ export const Editor = () => {
 			<Ruler />
 			<div className='min-w-max flex justify-center w-[816px] py-4 print:py-0 mx-auto print:w-full print:min-w-0'>
 				<EditorContent editor={editor} />
+				<Threads editor={editor} />
 			</div>
 		</div>
 	)
